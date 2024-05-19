@@ -68,7 +68,7 @@ Arguments:
 - `--save_model`: Specifies the directory where the compressed model will be stored.
 - `--real_com`: Whether to actually compress the model.
 
-After compression, we refer to <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a> for fine-tuning as well as evaluation. The latest version of the evaluation is <a href="https://github.com/EleutherAI/lm-evaluation-harness">lm-evaluation-harness</a>.
+After compression, we refer to <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a> for Lora fine-tuning as well as evaluation. The latest version of the evaluation is <a href="https://github.com/EleutherAI/lm-evaluation-harness">lm-evaluation-harness</a>.
 Since LoRA fine-tuning only supports torch.nn.Linear and Conv1D, the model isn't compressed during compression. Instead, after fine-tuning, the model is decomposed once again based on `After_tune.py`.
 
 ## Model Evaluation
@@ -84,7 +84,7 @@ More results can be found in the paper.
 
 
 ## Acknowledgement
-* The README.md: our README.md references <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a>, thanks to them for providing a readable and beautifully formatted README document.
+* The README.md: our README.md references <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a> and <a href="https://github.com/CASIA-IVA-Lab/FLAP/tree/main">FLAP</a>, thanks to them for providing readable and beautifully formatted README documents.
 * The evaluation of the LLM:  <a href="https://github.com/EleutherAI/lm-evaluation-harness">lm-evaluation-harness</a>.
 * LLaMA: <a href="https://github.com/facebookresearch/llama"> https://github.com/facebookresearch/llama </a>.
 * Vicuna: <a href="https://github.com/lm-sys/FastChat">https://github.com/lm-sys/FastChat </a>.
