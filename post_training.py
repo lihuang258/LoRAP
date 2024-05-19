@@ -1,10 +1,8 @@
-'''
-Refer to the original code:
-LLMPruner/post_training.py
-'''
-
+# The following code is derived from https://github.com/horseee/LLM-Pruner/post_training.py
+# Licensed under the Apache-2.0 license
+# The code is used for Lora fine-tuning of the pruned model with alpaca-cleaned dataset
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import sys
 import argparse
 from typing import List
@@ -125,7 +123,7 @@ def main(args):
     model = get_peft_model(model, config)
     model.print_trainable_parameters()
     # Load Train Dataset
-    data = load_from_disk(args.data_path)
+    data = load_dataset(args.data_path)
     if args.cache_dataset and os.path.exists('datasets/cache/{}.bin'.format(args.data_path)):
         preprocess_data = torch.load('datasets/cache/{}.bin'.format(args.data_path))
         train_data, val_data = preprocess_data['train'], preprocess_data['val']
@@ -182,7 +180,6 @@ def main(args):
             gradient_accumulation_steps=gradient_accumulation_steps,
             warmup_steps=100,
             num_train_epochs=args.num_epochs,
-            # num_train_epochs=2,
             learning_rate=args.learning_rate,
             # bf16=True,
             fp16=True,
@@ -191,9 +188,8 @@ def main(args):
             optim="adamw_torch",
             evaluation_strategy="steps",
             save_strategy="steps",
-            # eval_delay=60,
             eval_steps=100,
-            save_steps=100,
+            save_steps=200,
             output_dir=args.output_dir,
             save_total_limit=20,
             load_best_model_at_end=True,
@@ -222,11 +218,11 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Tuning Pruned LLM')
+    parser = argparse.ArgumentParser(description='LORA Tuning Compressed LLM')
 
     # Model Type&Path
     parser.add_argument('--base_model', type=str, default="base_model_path", help='base model name')
-    parser.add_argument('--prune_model',default="pruned_mdoel_path", type=str, help='prune model name')
+    parser.add_argument('--prune_model',default="pruned_mdoel_path", type=str, help='pruned model path')
     parser.add_argument('--data_path', type=str, default="alpaca-cleaned/", help='data path')
     parser.add_argument('--cache_dataset', action="store_true", default=False)
     parser.add_argument('--extra_val_dataset', type=str, default=None, help='validation datasets. Split with ","')

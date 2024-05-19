@@ -8,14 +8,13 @@ import gc
 from utils.log import exported_logger as logger
 from utils.compression import lorap
 from utils.data import get_loaders,test_loaders
-from utils.eval import eval_ppl,eval_ppl_wikitext,model_eval,llama_eval
+from utils.eval import llama_eval
 model,tokenizer,args=get_model()
 device = torch.device("cuda:0")
 model.to(device)
-args.sparsity_ratio=0.5
 ########compress model########
 lorap(args, model, tokenizer, device)
-
+########save pruned model########
 if args.save_model!=None:
     save_path = args.save_model
     if not os.path.exists(save_path):

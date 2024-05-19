@@ -35,11 +35,11 @@ def test_result(model,test_length,device):
     print("ptb ppl:%f" % ppl)
     ppl = llama_eval(model, test_loader2, device)
     print("wikitext2 ppl:%f" % ppl)
-def save_merged_model(model,save_path,sparsity_ratio):
+def save_merged_model(model,save_path,sparsity_ratio,allocate_ratio):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     save_name = os.path.join(save_path)
-    model=after_tune_SVD(model,8,sparsity_ratio)
+    model=after_tune_SVD(model,8,sparsity_ratio,allocate_ratio)
     torch.save({'model': model, 'tokenizer': tokenizer, }, save_name)
     print("save model to %s" % save_name)
 def get_model(model_path,use_lora,lora_path):
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     use_lora=False  #or True
     sparsity_ratio = "0.5"
     model_size = "7B"
+    allocate_ratio = 3
     device = torch.device("cuda:0")
     # convert_safe_to_bin(sparsity_ratio,model_size)
     model_path=f"pruned_model_path"
@@ -64,4 +65,4 @@ if __name__ == "__main__":
     print("merge finished")
     test_result(model,128,device)
     saved_path=f"saved_path"
-    save_merged_model(model, tokenizer, saved_path,sparsity_ratio)
+    save_merged_model(model, tokenizer, saved_path,sparsity_ratio,allocate_ratio)

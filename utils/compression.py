@@ -8,7 +8,7 @@ from utils.layerwrapper import WrappedGPT
 from utils.prune import prune_mlp
 from utils.decomposition import cal_saved_rank,decopose
 from transformers.activations import ACT2FN
-from utils.modeling_llama import Low_LlamaAttention,LinearLoW
+from utils.modeling_llama import LinearLoW
 def find_layers(module, layers=[nn.Linear], name=''):
     """
     Recursively find the layers of a certain type in a module.
@@ -34,14 +34,13 @@ def find_layers(module, layers=[nn.Linear], name=''):
 
 
 def lorap(args, model, tokenizer, device):
-    use_cache = model.config.use_cache  # 用来控制推理时是否使用cache，可以提高推理速度，但是会占用更多显存
+    use_cache = model.config.use_cache
     model.config.use_cache = False
-    dataset = args.dataset
-    dataloader, _ = get_loaders(dataset, nsamples=args.nsamples, seed=args.seed, seqlen=model.seqlen,
+    dataloader, _ = get_loaders(dataset=args.dataset, nsamples=args.nsamples, seed=args.seed, seqlen=model.seqlen,
                                 tokenizer=tokenizer, mode="train")
-    print(f"calibdation data {dataset} loading complete")
+    print(f"calibdation data {args.dataset} loading complete")
     with torch.no_grad():
-        inps, outs, attention_mask, position_ids = prepare_calibration_input(args,model, dataloader,device)  # 获得了输入的数据，attention_mask和position_ids
+        inps, outs, attention_mask, position_ids = prepare_calibration_input(args,model, dataloader,device)
     layers = model.model.layers
     if "mlp" in args.sublayer:
         allow_name = ['up_proj', 'gate_proj', 'down_proj']
@@ -49,7 +48,7 @@ def lorap(args, model, tokenizer, device):
         allow_name = []
     if "self_attn" in args.sublayer:
         allow_name = allow_name+['q_proj', 'k_proj', 'v_proj', 'o_proj']
-    for i in range(len(layers)):  # 遍历所有的layer,每层都按照相同的方式修剪
+    for i in range(len(layers)):
         layer = layers[i]
         all_set = find_layers(layer)
         subset={key: all_set[key] for key in all_set if key.split(".")[1] in allow_name}
@@ -77,7 +76,7 @@ def lorap(args, model, tokenizer, device):
             self_aten = layer.self_attn
             for name in self_attn_set:
                 if name in ["self_attn.q_proj", "self_attn.k_proj"]:
-                    print(f"SVD layer {i} name {name} k{k_min}")
+                    print(f"Decompose layer {i} name {name} k{k_min}")
                     L,R=decopose(name,subset,wrapped_layers,saved_rank=k_min, method=args.deco_method,return_dict=False)
                     if args.real_com:
                         new_layer = LinearLoW(subset[name].weight.shape[1], subset[name].weight.shape[0], saved_rank=k_min)
@@ -86,7 +85,7 @@ def lorap(args, model, tokenizer, device):
                     else:
                         subset[name].weight.data=L@R
                 elif name in ["self_attn.v_proj", "self_attn.o_proj"] and k_max < int(model.config.hidden_size/2):
-                    print(f"SVD layer {i} name {name} k{k_max}")
+                    print(f"Decompose layer {i} name {name} k{k_max}")
                     L, R = decopose(name, subset, wrapped_layers, saved_rank=k_max, method=args.deco_method,
                                     return_dict=False)
                     if args.real_com:
@@ -119,13 +118,13 @@ def lorap(args, model, tokenizer, device):
     torch.cuda.empty_cache()
 
 
-def after_tune_SVD(model,lora_rank,sparsity_ratio):
+def after_tune_SVD(model,lora_rank,sparsity_ratio,allocate_ratio):
     layers = model.model.layers
-    k_att, k_min, k_max = cal_saved_rank(sparsity_ratio, model)
+    k_att, k_min, k_max = cal_saved_rank(sparsity_ratio, model,allocate_ratio)
     k_min+=lora_rank
     k_max+=lora_rank
     for i in range(len(layers)):
-        print("prune layer %d"%i)
+        print("Decompose layer %d"%i)
         layer = layers[i]
         self_aten = layer.self_attn
         subset = find_layers(layer)

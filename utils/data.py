@@ -63,7 +63,6 @@ def get_c4(nsamples, seed, seqlen, tokenizer,mode="train"):
         logger.info("train data load finished")
         return trainloader, _
 
-
     if mode=="test":
         valdata = load_dataset('allenai/c4', 'allenai--c4',
                                data_files={'validation': 'en/c4-validation.00000-of-00008.json.gz'}, split='validation')
@@ -93,11 +92,12 @@ def get_bookcorpus(nsamples, seed, seqlen, tokenizer):
     return trainloader, _
 def get_ptb(nsamples, seed, seqlen, tokenizer):
     valdata = load_dataset('ptb_text_only', 'penn_treebank', split='validation')
-    testenc = tokenizer("\n\n".join(valdata['sentence'][:-1]), return_tensors='pt')
-    return 0, testenc
+    valenc = tokenizer("\n\n".join(valdata['sentence'][:-1]), return_tensors='pt')
+    return 0, valenc
 
 
 # Function to select the appropriate loader based on dataset name
+#get calibration data
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, tokenizer=None,mode="train"):
     if 'wikitext2' in name:
         return get_wikitext2_2(nsamples, seed, seqlen, tokenizer,mode=mode)
@@ -108,14 +108,13 @@ def get_loaders(name, nsamples=128, seed=0, seqlen=2048, tokenizer=None,mode="tr
     if 'ptb' in name:
         return get_ptb(nsamples, seed, seqlen, tokenizer)
 
-########从LLM-pruner中提取的代码
+######get  valdata  data for evaluation  from LLMPruner#######
 import random
 import numpy as np
 import torch
 
 from datasets import load_dataset, load_from_disk
 from torch.utils.data.dataset import Dataset
-
 
 def get_wikitext2(seq_len, tokenizer):
     traindata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
