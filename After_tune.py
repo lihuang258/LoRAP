@@ -8,10 +8,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import time
 from utils.compression import after_tune_SVD
 from utils.data import get_loaders,test_loaders
-from utils.eval import eval_ppl,eval_ppl_wikitext,model_eval,llama_eval
-from peft import PeftModel, PeftConfig
+from utils.eval import llama_eval
+from LLMPruner.peft import PeftModel, PeftConfig
 from utils.convert import convert_safe_to_bin
-
+import argparse
 def test_time(model,device):
     model.eval()
     with torch.no_grad():
@@ -53,16 +53,25 @@ def get_model(model_path,use_lora,lora_path):
     return model,tokenizer
 
 if __name__ == "__main__":
-    use_lora=False  #or True
-    sparsity_ratio = "0.5"
-    model_size = "7B"
-    allocate_ratio = 3
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path', type=str, default="pruned_model_path", help='The path of model')
+    parser.add_argument('--use_lora', type=bool, default=False, help='Whether to use LoRA')
+    parser.add_argument('--lora_path', type=str, default="tuned_model_path", help='The path of LoRA model')
+    parser.add_argument('--para_allocate', type=float, default=3, help='The parameter ratio of (Wv+Wo):(Wq+Wk)')
+    parser.add_argument('--sparsity_ratio', type=float, default=0.2, help='Sparsity level')
+    parser.add_argument('--eval_seqlen', type=int, default=128, help='The length of evaluation data')
+    parser.add_argument('--save_path', type=int, default="tuned_model", help='The size of model')
+    args = parser.parse_args()
+    use_lora=args.use_lora
+    sparsity_ratio = args.sparsity_ratio
+    allocate_ratio = args.para_allocate
+    eval_seqlen = args.eval_seqlen
     device = torch.device("cuda:0")
     # convert_safe_to_bin(sparsity_ratio,model_size)
-    model_path=f"pruned_model_path"
-    lora_path=f"tuned_model_path"
+    model_path=args.model_path
+    lora_path=args.lora_path
     model, tokenizer= get_model(model_path,use_lora,lora_path)
-    print("merge finished")
-    test_result(model,128,device)
-    saved_path=f"saved_path"
+    print("lora weights merged")
+    test_result(model,eval_seqlen,device)
+    saved_path=args.save_path
     save_merged_model(model, tokenizer, saved_path,sparsity_ratio,allocate_ratio)

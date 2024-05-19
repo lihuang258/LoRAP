@@ -38,7 +38,7 @@ The evaluation environment is consistent with <a href="https://github.com/horsee
 ```
 bash llama_7b.sh
 ```
-This script would compress the LLaMA-7B model with 20\% parameters pruned by LoRAP.
+This script would compress the LLaMA-7B model with 20% parameters by LoRAP.
 
     
 ## Compression Instruction
@@ -55,19 +55,21 @@ python main.py \
     --deco_method AWSVD \
     --sublayer self_attn,mlp \
     --save_model "compressed_model/lorap_0.2/" \
+    --real_com False \
 ```
 Arguments:
 - `--model`: The identifier for the LLaMA model on the Hugging Face model hub. The model name is used for `AutoModelForCausalLM.from_pretrained` to load the pre-trained LLM. For example, if you want to use the LLaMA with 7 billion parameters, than pass `decapoda-research/llama-7b-hf` to `--model`.
 - `--dataset`: The dataset of calibraton data, you can choose from [`c4`, `PTB`, `wikitest2`,`bookcorpus`]. The default is `bookcorpus`.
 - `--sparsity_ratio`: Proportion of reduced model parameters.
-- `--para_allocate`: The parameter ratio of (Wv+Wo):(Wq+Wk).
+- `--para_allocate`: The parameter ratio of (W<sub>v</sub> + W<sub>o</sub>) : (W<sub>q</sub> + W<sub>k</sub>).
 - `--mlp_compress_method`: Compression methods for mlp sublayers, namely [`prune`, `decom`]. The default is `prune`.
 - `--deco_method`: The method used for matrix factorization, namely [`AWSVD`, `AFM`, `SVD`]. The default is `AWSVD`.
 - `--sublayer`: Sublayers that require compression, the default is [`self_attn`, `mlp`], you also can `self_attn` or `mlp`.
 - `--save_model`: Specifies the directory where the compressed model will be stored.
- 
-After compression, we refer to the fine-tuning of <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a> and eval it with <a href="https://github.com/EleutherAI/lm-evaluation-harness">lm-evaluation-harness</a>.
-    
+- `--real_com`: Whether to actually compress the model.
+
+After compression, we refer to <a href="https://github.com/horseee/LLM-Pruner">LLM-Pruner</a> for fine-tuning as well as evaluation. The latest version of the evaluation is <a href="https://github.com/EleutherAI/lm-evaluation-harness">lm-evaluation-harness</a>.
+Since LoRA fine-tuning only supports torch.nn.Linear and Conv1D, the model isn't compressed during compression. Instead, after fine-tuning, the model is decomposed once again based on `After_tune.py`.
 
 ## Model Evaluation
 
